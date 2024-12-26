@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Offline Editor",
+  "version": "1.0",
+  "description": "A simple offline text editor",
+  "action": {}, 
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
