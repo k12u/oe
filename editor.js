@@ -1,64 +1,105 @@
-const editor = document.getElementById('editor');
-const newButton = document.getElementById('newButton');
+document.addEventListener('DOMContentLoaded', function() {
+    const editor = document.getElementById('editor');
+    const newButton = document.getElementById('newButton');
+    const showArchivedButton = document.getElementById('showArchivedButton');
+    const fileList = document.getElementById('fileList');
+    const archivedFileList = document.getElementById('archivedFileList');
 
-// タブのユニークIDをURLから取得、なければ生成
-function getTabId() {
-  const urlParams = new URLSearchParams(window.location.search);
-  let id = urlParams.get('id');
-  if (!id) {
-    id = generateUniqueId();
-    window.history.replaceState({}, '', `?id=${id}`);
-  }
-  return id;
-}
+    let id = new URLSearchParams(window.location.search).get('id');
+    if (!id) {
+        id = Math.random().toString(36).substr(2, 9);
+        window.history.replaceState(null, null, `?id=${id}`);
+    }
 
-// ランダムなユニークIDを生成
-function generateUniqueId() {
-  return Math.random().toString(36).substr(2, 9);
-}
+    const savedContent = localStorage.getItem(id);
+    if (savedContent) {
+        editor.value = savedContent;
+        document.title = savedContent.substring(0, 40);
+    }
 
-// chrome.storageからデータを読み込み
-function loadData(id) {
-    chrome.storage.local.get([id], (result) => {
-        const data = result[id];
-        if (data) {
-          editor.value = data;
-        } else {
-          editor.value = '';
-        }
-        updateTitle();
-      });
-}
-
-// chrome.storageにデータを保存
-function saveData(id, data) {
-    chrome.storage.local.set({ [id]: data }, () => {
-        updateTitle();
+    editor.addEventListener('input', function() {
+        localStorage.setItem(id, editor.value);
+        document.title = editor.value.substring(0, 40);
     });
-}
 
-// ブラウザタイトルを更新
-function updateTitle() {
-  const text = editor.value;
-  const title = text.substring(0, 40).replace(/\n/g, ' ') || 'Offline Editor';
-  document.title = title;
-}
+    newButton.addEventListener('click', function() {
+        window.open(window.location.pathname, '_blank');
+    });
 
-// タブIDを取得
-const tabId = getTabId();
+    function displayFileList(showArchived = false) {
+        fileList.innerHTML = '';
+        archivedFileList.innerHTML = '';
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            const isArchived = key.startsWith('archived_');
+            const content = localStorage.getItem(key);
+            const displayText = content ? content.substring(0, 10) + '...' : 'Empty';
+            const listItem = document.createElement('div');
+            listItem.className = 'file-item';
+            const link = document.createElement('a');
+            link.href = `?id=${key}`;
+            link.textContent = displayText;
+            link.addEventListener('click', function(event) {
+                event.preventDefault();
+                loadFile(key, isArchived);
+            });
+            const rightButtons = document.createElement('div');
+            rightButtons.className = 'right-buttons';
+            if (isArchived) {
+                const deleteButton = document.createElement('button');
+                deleteButton.innerHTML = `<i class="fas fa-trash"></i>`;
+                deleteButton.addEventListener('click', function() {
+                    deleteFile(key);
+                });
+                rightButtons.appendChild(deleteButton);
+                archivedFileList.appendChild(listItem);
+            } else {
+                const archiveButton = document.createElement('button');
+                archiveButton.innerHTML = `<i class="fas fa-archive"></i>`;
+                archiveButton.addEventListener('click', function() {
+                    archiveFile(key, isArchived);
+                });
+                rightButtons.appendChild(archiveButton);
+                fileList.appendChild(listItem);
+            }
+            listItem.appendChild(link);
+            listItem.appendChild(rightButtons);
+        }
+    }
 
-// データを読み込み
-loadData(tabId);
+    function loadFile(fileId, isArchived) {
+        const content = localStorage.getItem(fileId);
+        if (content) {
+            editor.value = content;
+            document.title = content.substring(0, 40);
+            window.history.replaceState(null, null, `?id=${fileId}`);
+            if (isArchived) {
+                archiveFile(fileId, true);
+            }
+        }
+    }
 
-// テキストエリアの変更を監視して保存
-editor.addEventListener('input', () => {
-  saveData(tabId, editor.value);
+    function archiveFile(fileId, unarchive = false) {
+        const content = localStorage.getItem(fileId);
+        if (content) {
+            const newKey = unarchive ? fileId.replace('archived_', '') : 'archived_' + fileId;
+            localStorage.setItem(newKey, content);
+            localStorage.removeItem(fileId);
+            displayFileList();
+        }
+    }
+
+    function deleteFile(fileId) {
+        localStorage.removeItem(fileId);
+        displayFileList();
+    }
+
+    let showArchived = false;
+    showArchivedButton.addEventListener('click', function() {
+        showArchived = !showArchived;
+        archivedFileList.style.display = showArchived ? 'block' : 'none';
+        showArchivedButton.textContent = showArchived ? 'Hide archived files' : 'Show archived files';
+    });
+
+    displayFileList();
 });
-
-// Newボタンのクリックイベント
-newButton.addEventListener('click', () => {
-    chrome.tabs.create({ url: 'editor.html' });
-});
-
-// ページ読み込み時にタイトルを更新
-window.addEventListener('load', updateTitle);
