@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Button } from "./components/ui/button"
 import { Textarea } from "./components/ui/textarea"
-import { Archive, FileIcon, Plus, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Archive, FileIcon, Plus, Trash2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 
 type File = {
     id: string
@@ -37,7 +37,7 @@ export default function App() {
                 // ファイルが存在しない場合は新規作成
                 const newFile = {
                     id: Date.now().toString(),
-                    name: 'New File 1',
+                    name: 'New Note 1',
                     content: '',
                     archived: false
                 };
@@ -72,7 +72,7 @@ export default function App() {
     const createNewFile = () => {
         const newFile = {
             id: Date.now().toString(),
-            name: `New File ${files.length + 1}`,
+            name: `New Note ${files.length + 1}`,
             content: '',
             archived: false
         }
@@ -120,10 +120,10 @@ export default function App() {
 
     useEffect(() => {
         if (currentFile) {
-            const preview = getFilePreview(currentFile.content) || 'Empty file';
-            document.title = `${preview} - Offline Editor`;
+            const preview = getFilePreview(currentFile.content) || 'Empty note';
+            document.title = `${preview} - Tab as Note`;
         } else {
-            document.title = 'Offline Editor';
+            document.title = 'Tab as Note';
         }
     }, [currentFile]);
 
@@ -134,16 +134,16 @@ export default function App() {
                     className="w-full h-full resize-none border-2 border-gray-300 rounded-md p-2"
                     value={currentFile?.content || ''}
                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateCurrentFile(e.target.value)}
-                    placeholder="Start typing..."
+                    placeholder="Start your note..."
                     autoFocus
                 />
             </div>
             <div className="w-64 bg-gray-200 p-4 flex flex-col">
                 <Button onClick={createNewFile} className="mb-4 bg-blue-500 hover:bg-blue-600 text-white">
-                    <Plus className="mr-2 h-4 w-4" /> New File
+                    <Plus className="mr-2 h-4 w-4" /> New Note
                 </Button>
                 <div className="flex-1 overflow-y-auto">
-                    <h2 className="font-bold mb-2 text-gray-700">Files</h2>
+                    <h2 className="font-bold mb-2 text-gray-700">Notes</h2>
                     {files.filter(f => !f.archived).map(file => (
                         <div key={file.id} className="flex items-center justify-between mb-2">
                             <button
@@ -152,7 +152,7 @@ export default function App() {
                                 title={file.name}
                             >
                                 <FileIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-                                <span className="truncate">{getFilePreview(file.content) || 'Empty file'}</span>
+                                <span className="truncate">{getFilePreview(file.content) || 'Empty note'}</span>
                             </button>
                             <div className="flex items-center">
                                 <Button
@@ -163,8 +163,10 @@ export default function App() {
                                         openFileInNewTab(file);
                                     }}
                                     className="text-gray-600 hover:text-gray-800 flex-shrink-0 mr-1"
+                                    aria-label="Open in new tab"
+                                    data-testid="open-in-new-tab"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                    <ExternalLink className="h-4 w-4" />
                                 </Button>
                                 <Button
                                     variant="ghost"
@@ -174,6 +176,7 @@ export default function App() {
                                         toggleArchive(file);
                                     }}
                                     className="text-red-500 hover:text-red-700 flex-shrink-0"
+                                    aria-label="Archive note"
                                 >
                                     <Archive className="h-4 w-4" />
                                 </Button>
@@ -189,18 +192,18 @@ export default function App() {
                     {showArchived ? (
                         <>
                             <ChevronUp className="mr-2 h-4 w-4" />
-                            Hide Archived Files
+                            Hide Archived Notes
                         </>
                     ) : (
                         <>
                             <ChevronDown className="mr-2 h-4 w-4" />
-                            Show Archived Files
+                            Show Archived Notes
                         </>
                     )}
                 </Button>
                 {showArchived && (
                     <div className="flex-1 overflow-y-auto">
-                        <h2 className="font-bold mb-2 text-gray-700">Archived Files</h2>
+                        <h2 className="font-bold mb-2 text-gray-700">Archived Notes</h2>
                         {files.filter(f => f.archived).map(file => (
                             <div key={file.id} className="flex items-center justify-between mb-2">
                                 <button
@@ -209,7 +212,7 @@ export default function App() {
                                     title={file.name}
                                 >
                                     <FileIcon className="mr-2 h-4 w-4 flex-shrink-0" />
-                                    <span className="truncate">{getFilePreview(file.content) || 'Empty file'}</span>
+                                    <span className="truncate">{getFilePreview(file.content) || 'Empty note'}</span>
                                 </button>
                                 <div className="flex items-center">
                                     <Button

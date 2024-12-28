@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Offline Editor",
+  "name": "Tab as Note",
   "version": "1.0",
-  "description": "An offline editor as a Chrome extension",
+  "description": "The tab is your notepad.",
   "permissions": ["storage"],
   "action": {
     "default_icon": {
