@@ -3,7 +3,10 @@ const CopyPlugin = require('copy-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
+const mode = process.env.MODE || 'production';
+
 module.exports = {
+  mode: mode,
   entry: {
     index: './src/index.tsx',
     background: './public/background.js'
@@ -11,7 +14,9 @@ module.exports = {
   output: {
     filename: '[name].js',
     path: path.resolve(__dirname, 'dist'),
+    clean: true,
   },
+  devtool: 'cheap-module-source-map',
   module: {
     rules: [
       {

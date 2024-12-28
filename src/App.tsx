@@ -22,18 +22,32 @@ export default function App() {
 
     useEffect(() => {
         chrome.storage.sync.get(['files', 'showArchived'], (result) => {
-            if (result.files) {
-                setFiles(result.files);
-                const urlParams = new URLSearchParams(window.location.search);
-                const fileId = urlParams.get('fileId');
-                if (fileId) {
-                    const file = result.files.find((f: File) => f.id === fileId);
-                    if (file) {
-                        setCurrentFile(file);
-                    }
+            const savedFiles = result.files || [];
+            setFiles(savedFiles);
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const fileId = urlParams.get('fileId');
+            
+            if (fileId) {
+                const file = savedFiles.find((f: File) => f.id === fileId);
+                if (file) {
+                    setCurrentFile(file);
                 }
+            } else if (savedFiles.length === 0) {
+                // ファイルが存在しない場合は新規作成
+                const newFile = {
+                    id: Date.now().toString(),
+                    name: 'New File 1',
+                    content: '',
+                    archived: false
+                };
+                setFiles([newFile]);
+                setCurrentFile(newFile);
             }
-            if (result.showArchived !== undefined) setShowArchivedState(result.showArchived);
+            
+            if (result.showArchived !== undefined) {
+                setShowArchivedState(result.showArchived);
+            }
         });
     }, []);
 
