@@ -43,6 +43,15 @@ export default function App() {
                 };
                 setFiles([newFile]);
                 setCurrentFile(newFile);
+            } else {
+                // 既存のファイルがある場合は、アーカイブされていない最初のファイルを開く
+                const firstNonArchivedFile = savedFiles.find((f: File) => !f.archived);
+                if (firstNonArchivedFile) {
+                    setCurrentFile(firstNonArchivedFile);
+                } else {
+                    // アーカイブされていないファイルがない場合は、最初のファイルを開く
+                    setCurrentFile(savedFiles[0]);
+                }
             }
             
             if (result.showArchived !== undefined) {
@@ -154,7 +163,7 @@ export default function App() {
                                         e.stopPropagation();
                                         toggleArchive(file);
                                     }}
-                                    className="text-gray-600 hover:text-gray-800 flex-shrink-0"
+                                    className="text-red-500 hover:text-red-700 flex-shrink-0"
                                 >
                                     <Archive className="h-4 w-4" />
                                 </Button>
@@ -198,11 +207,12 @@ export default function App() {
                                         size="icon"
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            openFileInNewTab(file);
+                                            toggleArchive(file);
                                         }}
                                         className="text-gray-600 hover:text-gray-800 flex-shrink-0 mr-1"
+                                        title="Unarchive"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                                        <Archive className="h-4 w-4" />
                                     </Button>
                                     <Button
                                         variant="ghost"
