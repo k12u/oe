@@ -118,6 +118,15 @@ export default function App() {
         chrome.runtime.sendMessage({ action: "openFile", fileId: file.id });
     }
 
+    useEffect(() => {
+        if (currentFile) {
+            const preview = getFilePreview(currentFile.content) || 'Empty file';
+            document.title = `${preview} - Offline Editor`;
+        } else {
+            document.title = 'Offline Editor';
+        }
+    }, [currentFile]);
+
     return (
         <div className="flex h-screen w-full bg-gray-100">
             <div className="flex-1 p-4 bg-white">
