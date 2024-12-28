@@ -126,6 +126,7 @@ export default function App() {
                     value={currentFile?.content || ''}
                     onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => updateCurrentFile(e.target.value)}
                     placeholder="Start typing..."
+                    autoFocus
                 />
             </div>
             <div className="w-64 bg-gray-200 p-4 flex flex-col">
