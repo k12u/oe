@@ -20,6 +20,13 @@ export default function App() {
     const [currentFile, setCurrentFile] = useState<File | null>(null)
     const [showArchived, setShowArchivedState] = useState(false)
 
+    const setCurrentFileWithUrl = (file: File | null) => {
+        setCurrentFile(file);
+        if (file) {
+            window.history.pushState(null, '', `?fileId=${file.id}`);
+        }
+    };
+
     useEffect(() => {
         chrome.storage.sync.get(['files', 'showArchived'], (result) => {
             const savedFiles = result.files || [];
@@ -31,10 +38,9 @@ export default function App() {
             if (fileId) {
                 const file = savedFiles.find((f: File) => f.id === fileId);
                 if (file) {
-                    setCurrentFile(file);
+                    setCurrentFileWithUrl(file);
                 }
             } else if (savedFiles.length === 0) {
-                // ファイルが存在しない場合は新規作成
                 const newFile = {
                     id: Date.now().toString(),
                     name: 'New Note 1',
@@ -42,15 +48,13 @@ export default function App() {
                     archived: false
                 };
                 setFiles([newFile]);
-                setCurrentFile(newFile);
+                setCurrentFileWithUrl(newFile);
             } else {
-                // 既存のファイルがある場合は、アーカイブされていない最初のファイルを開く
                 const firstNonArchivedFile = savedFiles.find((f: File) => !f.archived);
                 if (firstNonArchivedFile) {
-                    setCurrentFile(firstNonArchivedFile);
+                    setCurrentFileWithUrl(firstNonArchivedFile);
                 } else {
-                    // アーカイブされていないファイルがない場合は、最初のファイルを開く
-                    setCurrentFile(savedFiles[0]);
+                    setCurrentFileWithUrl(savedFiles[0]);
                 }
             }
             
@@ -77,7 +81,7 @@ export default function App() {
             archived: false
         }
         setFiles([...files, newFile])
-        setCurrentFile(newFile)
+        setCurrentFileWithUrl(newFile)
     }
 
     const updateCurrentFile = (content: string) => {
@@ -109,9 +113,7 @@ export default function App() {
         if (file.archived) {
             toggleArchive(file)
         }
-        setCurrentFile(file)
-        // Update URL without reloading the page
-        window.history.pushState(null, '', `?fileId=${file.id}`);
+        setCurrentFileWithUrl(file)
     }
 
     const openFileInNewTab = (file: File) => {
