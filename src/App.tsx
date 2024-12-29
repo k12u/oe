@@ -3,6 +3,7 @@ import { Button } from "./components/ui/button"
 import { Textarea } from "./components/ui/textarea"
 import { Archive, FileIcon, Plus, Trash2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
 import { useDebounce } from './hooks/useDebounce'
+import { useStorage } from './storage/StorageContext'
 
 type File = {
     id: string
@@ -21,8 +22,9 @@ export default function App() {
     const [currentFile, setCurrentFile] = useState<File | null>(null)
     const [showArchived, setShowArchivedState] = useState(false)
 
-    const STORAGE_DELAY = 1000; // 1秒
+    const STORAGE_DELAY = process.env.NODE_ENV === 'test' ? 0 : 1000;
     const debouncedFiles = useDebounce(files, STORAGE_DELAY);
+    const storage = useStorage();
 
     const setCurrentFileWithUrl = (file: File | null) => {
         setCurrentFile(file);
@@ -32,9 +34,12 @@ export default function App() {
     };
 
     useEffect(() => {
-        chrome.storage.sync.get(['files', 'showArchived'], (result) => {
-            const savedFiles = result.files || [];
+        const loadInitialData = async () => {
+            const savedFiles = await storage.get<File[]>('files') || [];
+            const showArchivedValue = await storage.get<boolean>('showArchived') || false;
+            
             setFiles(savedFiles);
+            setShowArchivedState(showArchivedValue);
             
             const urlParams = new URLSearchParams(window.location.search);
             const fileId = urlParams.get('fileId');
@@ -61,22 +66,20 @@ export default function App() {
                     setCurrentFileWithUrl(savedFiles[0]);
                 }
             }
-            
-            if (result.showArchived !== undefined) {
-                setShowArchivedState(result.showArchived);
-            }
-        });
+        };
+        
+        loadInitialData();
     }, []);
 
     useEffect(() => {
         if (debouncedFiles) {
-            chrome.storage.sync.set({ files: debouncedFiles });
+            storage.set('files', debouncedFiles);
         }
     }, [debouncedFiles]);
 
     const setShowArchived = (value: boolean) => {
         setShowArchivedState(value);
-        chrome.storage.sync.set({ showArchived: value });
+        storage.set('showArchived', value);
     };
 
     const createNewFile = () => {

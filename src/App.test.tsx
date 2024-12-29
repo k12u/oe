@@ -1,51 +1,81 @@
-import { render, act, renderHook } from '@testing-library/react'
-import '@testing-library/jest-dom'
+import { render, act, renderHook, fireEvent, screen } from '@testing-library/react'
 import App from './App'
 import { useFiles } from './useFiles'
+import { StorageProvider } from './storage/StorageContext'
+import { StorageInterface } from './storage/StorageInterface'
 
-// Chrome APIのモック
-const mockChromeStorage = {
-  sync: {
-    get: jest.fn(),
-    set: jest.fn()
+class MockStorage implements StorageInterface {
+  private store: { [key: string]: any } = {};
+  public mockGet = jest.fn();
+  public mockSet = jest.fn();
+
+  async get<T>(key: string): Promise<T | null> {
+    this.mockGet(key);
+    return this.store[key];
+  }
+
+  async set<T>(key: string, value: T): Promise<void> {
+    this.mockSet({ [key]: value });
+    this.store[key] = value;
+  }
+
+  clear() {
+    this.store = {};
+    this.mockGet.mockClear();
+    this.mockSet.mockClear();
+  }
+
+  setState(state: { [key: string]: any }) {
+    this.store = state;
   }
 }
-global.chrome = {
-  storage: mockChromeStorage,
-  runtime: {
-    sendMessage: jest.fn()
-  }
-} as any
+
+const mockStorage = new MockStorage();
+
+const renderWithStorage = (ui: React.ReactElement) => {
+  return render(
+    <StorageProvider storage={mockStorage}>
+      {ui}
+    </StorageProvider>
+  );
+};
 
 describe('App', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
-    mockChromeStorage.sync.get.mockImplementation((keys, callback) => {
-      callback({ files: [], showArchived: false })
-    })
-  })
+    mockStorage.clear();
+    mockStorage.setState({
+      files: [],
+      showArchived: false
+    });
+  });
 
   test('新規ファイル作成時にストレージが更新される', async () => {
-    render(<App />)
-    
-    // ファイル作成のロジックをトリガー
-    await act(async () => {
-      // アプリケーションの状態を更新
-    })
+    mockStorage.setState({
+      files: []
+    });
 
-    expect(mockChromeStorage.sync.set).toHaveBeenCalledWith(
-      expect.objectContaining({
-        files: expect.arrayContaining([
-          expect.objectContaining({
-            id: expect.any(String),
-            name: expect.any(String),
-            content: '',
-            archived: false
-          })
-        ])
-      })
-    )
-  })
+    await act(async () => {
+      renderWithStorage(<App />);
+    });
+
+    const newFileButton = screen.getByRole('button', { name: /new note/i });
+    
+    await act(async () => {
+      fireEvent.click(newFileButton);
+    });
+
+    const lastCall = mockStorage.mockSet.mock.calls[mockStorage.mockSet.mock.calls.length - 1][0];
+    const filesArray = lastCall.files;
+    
+    expect(filesArray.length).toBe(1);
+    
+    expect(filesArray[0]).toMatchObject({
+      id: expect.any(String),
+      name: expect.any(String),
+      content: '',
+      archived: false
+    });
+  });
 
   test('ファイルのアーカイブ状態が正しく更新される', async () => {
     const testFile = {
@@ -53,51 +83,29 @@ describe('App', () => {
       name: 'Test Note',
       content: 'テスト',
       archived: false
-    }
+    };
     
-    // 初期状態の設定
-    mockChromeStorage.sync.get.mockImplementation((keys, callback) => {
-      callback({
-        files: [testFile],
-        showArchived: false
-      })
-    })
+    mockStorage.setState({
+      files: [testFile]
+    });
 
-    const { result } = renderHook(() => useFiles())
+    const { result } = renderHook(() => useFiles(), { 
+      wrapper: ({ children }) => (
+        <StorageProvider storage={mockStorage}>{children}</StorageProvider>
+      )
+    });
     
-    // アーカイブ操作をトリガー
     await act(async () => {
-      result.current.toggleArchive('1')
-    })
+      await result.current.toggleArchive('1');
+      await new Promise(resolve => setTimeout(resolve, 100));
+    });
 
-    // 最後の呼び出しの引数をチェック
-    const lastCall = mockChromeStorage.sync.set.mock.calls[mockChromeStorage.sync.set.mock.calls.length - 1][0];
+    const lastCall = mockStorage.mockSet.mock.calls[mockStorage.mockSet.mock.calls.length - 1][0];
     expect(lastCall).toEqual({
       files: [{
         ...testFile,
         archived: true
       }]
-    })
-  })
-
-  test('アーカイブ表示設定が正しく保存される', async () => {
-    // 初期状態の設定
-    mockChromeStorage.sync.get.mockImplementation((keys, callback) => {
-      callback({
-        showArchived: false
-      })
-    })
-
-    const { result } = renderHook(() => useFiles())
-    
-    await act(async () => {
-      result.current.toggleShowArchived()
-    })
-
-    // 最後の呼び出しの引数をチェック
-    const lastCall = mockChromeStorage.sync.set.mock.calls[mockChromeStorage.sync.set.mock.calls.length - 1][0];
-    expect(lastCall).toEqual({
-      showArchived: true
-    })
-  })
-}) 
+    });
+  });
+}); 

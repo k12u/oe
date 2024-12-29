@@ -1,3 +1,5 @@
+import { useStorage } from './storage/StorageContext';
+
 interface File {
   id: string;
   name: string;
@@ -6,30 +8,19 @@ interface File {
 }
 
 export function useFiles() {
-  const toggleArchive = async (id: string) => {
-    const result = await new Promise<{ files: File[] }>((resolve) => {
-      chrome.storage.sync.get(['files'], (items) => {
-        resolve({ files: items.files || [] });
-      });
-    });
+  const storage = useStorage();
 
-    const updatedFiles = result.files.map(file => 
+  const toggleArchive = async (id: string) => {
+    const files = await storage.get<File[]>('files') || [];
+    const updatedFiles = files.map(file => 
       file.id === id ? { ...file, archived: !file.archived } : file
     );
-
-    await chrome.storage.sync.set({ files: updatedFiles });
+    await storage.set('files', updatedFiles);
   };
 
   const toggleShowArchived = async () => {
-    const result = await new Promise<{ showArchived: boolean }>((resolve) => {
-      chrome.storage.sync.get(['showArchived'], (items) => {
-        resolve({ showArchived: !!items.showArchived });
-      });
-    });
-
-    await chrome.storage.sync.set({ 
-      showArchived: !result.showArchived 
-    });
+    const showArchived = await storage.get<boolean>('showArchived') || false;
+    await storage.set('showArchived', !showArchived);
   };
 
   return {
