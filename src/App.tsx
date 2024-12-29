@@ -108,12 +108,26 @@ export default function App() {
 
     const deleteFile = (file: File) => {
         if (file.archived) {
-            setFiles(files.filter(f => f.id !== file.id))
+            const updatedFiles = files.filter(f => f.id !== file.id);
+            setFiles(updatedFiles);
+            
             if (currentFile?.id === file.id) {
-                setCurrentFile(null)
+                const firstNonArchivedFile = updatedFiles.find(f => !f.archived);
+                
+                if (firstNonArchivedFile) {
+                    setCurrentFileWithUrl(firstNonArchivedFile);
+                } else {
+                    const newFile = {
+                        id: Date.now().toString(),
+                        content: '',
+                        archived: false
+                    };
+                    setFiles([newFile]);
+                    setCurrentFileWithUrl(newFile);
+                }
             }
         }
-    }
+    };
 
     const openFile = (file: File) => {
         if (file.archived) {
