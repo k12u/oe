@@ -7,7 +7,6 @@ import { useStorage } from './storage/StorageContext'
 
 type File = {
     id: string
-    name: string
     content: string
     archived: boolean
 }
@@ -52,7 +51,6 @@ export default function App() {
             } else if (savedFiles.length === 0) {
                 const newFile = {
                     id: Date.now().toString(),
-                    name: 'New Note 1',
                     content: '',
                     archived: false
                 };
@@ -85,7 +83,6 @@ export default function App() {
     const createNewFile = () => {
         const newFile = {
             id: Date.now().toString(),
-            name: `New Note ${files.length + 1}`,
             content: '',
             archived: false
         }
@@ -150,7 +147,11 @@ export default function App() {
                 />
             </div>
             <div className="w-64 bg-gray-200 p-4 flex flex-col">
-                <Button onClick={createNewFile} className="mb-4 bg-blue-500 hover:bg-blue-600 text-white">
+                <Button
+                    data-testid="new-file-button"
+                    onClick={createNewFile}
+                    className="mb-4 bg-blue-500 hover:bg-blue-600 text-white"
+                >
                     <Plus className="mr-2 h-4 w-4" /> New Note
                 </Button>
                 <div className="flex-1 overflow-y-auto">
@@ -160,7 +161,6 @@ export default function App() {
                             <button
                                 className="text-left flex items-center text-blue-600 hover:text-blue-800 truncate"
                                 onClick={() => openFile(file)}
-                                title={file.name}
                             >
                                 <FileIcon className="mr-2 h-4 w-4 flex-shrink-0" />
                                 <span className="truncate">{getFilePreview(file.content) || 'Empty note'}</span>
@@ -220,7 +220,6 @@ export default function App() {
                                 <button
                                     className="text-left flex items-center text-blue-600 hover:text-blue-800 truncate"
                                     onClick={() => openFile(file)}
-                                    title={file.name}
                                 >
                                     <FileIcon className="mr-2 h-4 w-4 flex-shrink-0" />
                                     <span className="truncate">{getFilePreview(file.content) || 'Empty note'}</span>
