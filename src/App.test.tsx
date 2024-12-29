@@ -50,15 +50,17 @@ describe('App', () => {
   });
 
   test('新規ファイル作成時にストレージが更新される', async () => {
+    mockStorage.clear();
     mockStorage.setState({
-      files: []
+      files: [],
+      showArchived: false
     });
 
     await act(async () => {
       renderWithStorage(<App />);
     });
 
-    const newFileButton = screen.getByRole('button', { name: /new note/i });
+    const newFileButton = screen.getByTestId('new-file-button');
     
     await act(async () => {
       fireEvent.click(newFileButton);
@@ -71,7 +73,6 @@ describe('App', () => {
     
     expect(filesArray[0]).toMatchObject({
       id: expect.any(String),
-      name: expect.any(String),
       content: '',
       archived: false
     });
@@ -80,7 +81,6 @@ describe('App', () => {
   test('ファイルのアーカイブ状態が正しく更新される', async () => {
     const testFile = {
       id: '1',
-      name: 'Test Note',
       content: 'テスト',
       archived: false
     };
