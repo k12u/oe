@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Button } from "./components/ui/button"
 import { Textarea } from "./components/ui/textarea"
 import { Archive, FileIcon, Plus, Trash2, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react'
+import { useDebounce } from './hooks/useDebounce'
 
 type File = {
     id: string
@@ -19,6 +20,9 @@ export default function App() {
     const [files, setFiles] = useState<File[]>([])
     const [currentFile, setCurrentFile] = useState<File | null>(null)
     const [showArchived, setShowArchivedState] = useState(false)
+
+    const STORAGE_DELAY = 1000; // 1秒
+    const debouncedFiles = useDebounce(files, STORAGE_DELAY);
 
     const setCurrentFileWithUrl = (file: File | null) => {
         setCurrentFile(file);
@@ -65,8 +69,10 @@ export default function App() {
     }, []);
 
     useEffect(() => {
-        chrome.storage.sync.set({ files });
-    }, [files]);
+        if (debouncedFiles) {
+            chrome.storage.sync.set({ files: debouncedFiles });
+        }
+    }, [debouncedFiles]);
 
     const setShowArchived = (value: boolean) => {
         setShowArchivedState(value);
